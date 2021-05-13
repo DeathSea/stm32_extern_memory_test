@@ -19,7 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "command_set.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -59,6 +59,114 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void WREN()
+{
+  QSPI_CommandTypeDef command;
+  command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+  command.DdrMode = QSPI_DDR_MODE_DISABLE;
+  command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
+  command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+
+  command.Instruction = WRITE_ENABLE;
+  command.Address = 0;
+  command.AddressSize = 0;
+  command.AddressMode = QSPI_ADDRESS_NONE;
+  command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+  command.AlternateBytesSize = 0;
+  command.AlternateBytes = 0;
+  command.DummyCycles = 0;
+  command.DataMode = QSPI_DATA_NONE;
+  command.NbData = 0;
+
+  if (HAL_QSPI_Command(&hqspi, &command, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+void quad_enable()
+{
+  QSPI_CommandTypeDef command;
+  command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+  command.DdrMode = QSPI_DDR_MODE_DISABLE;
+  command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
+  command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+
+  command.Instruction = WRITE_STATUS_REG;
+  command.Address = 0;
+  command.AddressSize = 0;
+  command.AddressMode = QSPI_ADDRESS_NONE;
+  command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+  command.AlternateBytesSize = 0;
+  command.AlternateBytes = 0;
+  command.DummyCycles = 0;
+  command.DataMode = QSPI_DATA_1_LINE;
+  command.NbData = 1;
+
+  if (HAL_QSPI_Command(&hqspi, &command, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+// status reg SRWD|QE|BP3|BP2|BP1|BP0|WEL|WIP
+void set_polling_config_WEL(QSPI_AutoPollingTypeDef* pollingConfig)
+{
+  pollingConfig->Match = 0x02; 
+  pollingConfig->Mask = 0x02;
+  pollingConfig->Interval = 1;
+  pollingConfig->StatusBytesSize = 1;
+  pollingConfig->MatchMode = QSPI_MATCH_MODE_AND;
+  pollingConfig->AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
+}
+
+// status reg SRWD|QE|BP3|BP2|BP1|BP0|WEL|WIP
+void set_polling_config_WIP(QSPI_AutoPollingTypeDef* pollingConfig)
+{
+  pollingConfig->Match = 0x00;
+  pollingConfig->Mask = 0x01;
+  pollingConfig->Interval = 1;
+  pollingConfig->StatusBytesSize = 1;
+  pollingConfig->MatchMode = QSPI_MATCH_MODE_AND;
+  pollingConfig->AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
+}
+
+// status reg SRWD|QE|BP3|BP2|BP1|BP0|WEL|WIP
+void set_polling_config_QE(QSPI_AutoPollingTypeDef* pollingConfig)
+{
+  pollingConfig->Match = 0x40;
+  pollingConfig->Mask = 0x40;
+  pollingConfig->Interval = 1;
+  pollingConfig->StatusBytesSize = 1;
+  pollingConfig->MatchMode = QSPI_MATCH_MODE_AND;
+  pollingConfig->AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
+}
+
+void check_status_register(QSPI_AutoPollingTypeDef* pollingConfig)
+{
+  QSPI_CommandTypeDef command;
+  command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+  command.DdrMode = QSPI_DDR_MODE_DISABLE;
+  command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
+  command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+
+  command.Instruction = READ_STATUS_REG;
+  command.Address = 0;
+  command.AddressSize = 0;
+  command.AddressMode = QSPI_ADDRESS_NONE;
+  command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+  command.AlternateBytesSize = 0;
+  command.AlternateBytes = 0;
+  command.DummyCycles = 0;
+  command.DataMode = QSPI_DATA_1_LINE;
+  command.NbData = 0;
+
+  if (HAL_QSPI_AutoPolling(&hqspi, &command, pollingConfig, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
 
 /* USER CODE END 0 */
 
@@ -92,8 +200,16 @@ int main(void)
   MX_GPIO_Init();
   MX_QUADSPI_Init();
   MX_USART2_UART_Init();
+  
+  QSPI_CommandTypeDef command;
   /* USER CODE BEGIN 2 */
-  QSPI_CommandTypeDef      command;
+  command.AlternateBytesSize = 0;
+  command.AlternateByteMode = QSPI_ALTERNATE_BYTES_4_LINES;
+  command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+  command.DdrMode = QSPI_DDR_MODE_DISABLE;
+  command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
+  command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+  command.DummyCycles = 0;
 
   /* USER CODE END 2 */
 
