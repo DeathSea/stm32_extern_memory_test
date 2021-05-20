@@ -355,6 +355,32 @@ void check_status_register(QSPI_AutoPollingTypeDef *pollingConfig)
     }
 }
 
+// sector erase
+void SE(uint32_t address)
+{
+    QSPI_CommandTypeDef command;
+    command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+    command.DdrMode = QSPI_DDR_MODE_DISABLE;
+    command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
+    command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+
+    command.Instruction = SECTOR_ERASE;
+    command.Address = address;
+    command.AddressSize = QSPI_ADDRESS_24_BITS;
+    command.AddressMode = QSPI_ADDRESS_1_LINE;
+    command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+    command.AlternateBytesSize = 0;
+    command.AlternateBytes = 0;
+    command.DummyCycles = 0;
+    command.DataMode = QSPI_DATA_NONE;
+    command.NbData = 0;
+
+    if (HAL_QSPI_Command(&hqspi, &command, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
+
 void PP(uint32_t address, uint8_t *data, uint32_t dataSize)
 {
     QSPI_CommandTypeDef command;
@@ -399,7 +425,7 @@ void FREAD(uint32_t address, uint8_t *data, uint32_t dataSize)
     command.AddressMode = QSPI_ADDRESS_4_LINES;
     command.AlternateByteMode = QSPI_ALTERNATE_BYTES_4_LINES;
     command.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
-    command.AlternateBytes = 0x00;
+    command.AlternateBytes = 0x55;
     command.DummyCycles = Q_WRITE_DUMMY_CYCLES;
     command.DataMode = QSPI_DATA_4_LINES;
     command.NbData = dataSize;
@@ -482,7 +508,7 @@ int main(void)
         WREN();
         set_polling_config_WEL(&autoPollingConfig);
         check_status_register(&autoPollingConfig);
-        WRCR(configReg1, (configReg2 & 0b00000010) | 0b00000000); // hight profermence mode
+        WRCR(configReg1, (configReg2 & 0b00000010) | 0b00000010); // hight profermence mode
         HAL_Delay(30);
         RDCR(&configReg1, &configReg2);
     }
@@ -493,19 +519,32 @@ int main(void)
     }
 
     printf("status reg is now:%x\n", statusReg);
+    printf("config reg1 %x, reg2 %x", configReg1, configReg2);
 
     quad_enable();
     statusReg = RDSR();
     printf("status reg quad enable is now:%x\n", statusReg);
+    int writeTest = 0;
+    if (writeTest == 1) {
+        WREN();
+        set_polling_config_WEL(&autoPollingConfig);
+        check_status_register(&autoPollingConfig);
 
-    WREN();
-    set_polling_config_WEL(&autoPollingConfig);
-    check_status_register(&autoPollingConfig);
+        SE(0x123456);
+        set_polling_config_WIP(&autoPollingConfig);
+        check_status_register(&autoPollingConfig);
 
-    uint8_t testData[] = "test data 2";
-    PP(0x123456, testData, sizeof(testData));
-    set_polling_config_WIP(&autoPollingConfig);
-    check_status_register(&autoPollingConfig);
+        WREN();
+        set_polling_config_WEL(&autoPollingConfig);
+        check_status_register(&autoPollingConfig);
+
+        uint8_t testData[] = "another test data data 3";
+        PP(0x123456, testData, sizeof(testData));
+        set_polling_config_WIP(&autoPollingConfig);
+        check_status_register(&autoPollingConfig);
+    } else {
+        printf("write disable\n");
+    }
 
     uint8_t outData[125] = {0};
     FREAD(0x123456, outData, sizeof(outData) - 1);
@@ -595,7 +634,7 @@ static void MX_QUADSPI_Init(void)
     /* USER CODE END QUADSPI_Init 1 */
     /* QUADSPI parameter configuration*/
     hqspi.Instance = QUADSPI;
-    hqspi.Init.ClockPrescaler = 3;                              // ClockPrescaler = 0,QSPI clock = FAHB / 1 = 80MHz / 1 = 80MHz
+    hqspi.Init.ClockPrescaler = 0;                              // ClockPrescaler = 0,QSPI clock = FAHB / 1 = 80MHz / 1 = 80MHz
     hqspi.Init.FifoThreshold = 1;                               // FIFO when 8 more bytes written or read
     hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE; // don't sample the data read from memory half-clock cycle later
     hqspi.Init.FlashSize = 25;                                  // flash size = 2**(25+1) = 2**26 = 67108864 = 64 Mbytes
