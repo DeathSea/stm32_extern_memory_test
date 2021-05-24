@@ -577,12 +577,12 @@ void SystemClock_Config(void)
     /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
     RCC_OscInitStruct.PLL.PLLM = 1;
-    RCC_OscInitStruct.PLL.PLLN = 20;
+    RCC_OscInitStruct.PLL.PLLN = 10;
     RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
     RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
     RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
@@ -608,7 +608,7 @@ void SystemClock_Config(void)
     {
         Error_Handler();
     }
-    HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_1);
+    HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_SYSCLK, RCC_MCODIV_1);
     /** Configure the main internal regulator output voltage
   */
     if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
@@ -636,7 +636,7 @@ static void MX_QUADSPI_Init(void)
     hqspi.Instance = QUADSPI;
     hqspi.Init.ClockPrescaler = 0;                              // ClockPrescaler = 0,QSPI clock = FAHB / 1 = 80MHz / 1 = 80MHz
     hqspi.Init.FifoThreshold = 1;                               // FIFO when 8 more bytes written or read
-    hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE; // don't sample the data read from memory half-clock cycle later
+    hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE; // don't sample the data read from memory half-clock cycle later
     hqspi.Init.FlashSize = 25;                                  // flash size = 2**(25+1) = 2**26 = 67108864 = 64 Mbytes
     hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;  // the read and wirte command should CS# high in 30ns
     hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;                   // clock stay low bwteen two command
@@ -702,7 +702,7 @@ static void MX_GPIO_Init(void)
     GPIO_InitStruct.Pin = GPIO_PIN_8;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
