@@ -62,6 +62,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_QUADSPI_Init(void);
 static void MX_USART2_UART_Init(void);
+void set_polling_config_WEL(QSPI_AutoPollingTypeDef *pollingConfig);
+void check_status_register(QSPI_AutoPollingTypeDef *pollingConfig);
+void set_polling_config_QE(QSPI_AutoPollingTypeDef *pollingConfig);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -211,6 +214,12 @@ void quad_enable()
 
     uint8_t readReg = RDSR();
 
+    WREN();
+    
+    QSPI_AutoPollingTypeDef autoPollingConfig;
+    set_polling_config_WEL(&autoPollingConfig);
+    check_status_register(&autoPollingConfig);
+
     if (HAL_QSPI_Command(&hqspi, &command, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     {
         Error_Handler();
@@ -221,6 +230,10 @@ void quad_enable()
     {
         Error_Handler();
     }
+
+    set_polling_config_QE(&autoPollingConfig);
+    check_status_register(&autoPollingConfig);
+
 }
 void MPBClear() 
 {
@@ -425,7 +438,7 @@ void FREAD(uint32_t address, uint8_t *data, uint32_t dataSize)
     command.AddressMode = QSPI_ADDRESS_4_LINES;
     command.AlternateByteMode = QSPI_ALTERNATE_BYTES_4_LINES;
     command.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
-    command.AlternateBytes = 0x55;
+    command.AlternateBytes = 0xf0;
     command.DummyCycles = Q_WRITE_DUMMY_CYCLES;
     command.DataMode = QSPI_DATA_4_LINES;
     command.NbData = dataSize;
@@ -497,11 +510,11 @@ int main(void)
         MPBClear();
         statusReg = RDSR();
     }
-    if ((configReg1 & 0b01000000)) {
+    if ((configReg1 & 0b01000000) == 0) {
         WREN();
         set_polling_config_WEL(&autoPollingConfig);
         check_status_register(&autoPollingConfig);
-        WRCR((configReg1 & 0b01000000) | 0b00000000, configReg2); // dummy cycle = 6 = 2 + 4
+        WRCR((configReg1 & 0b01000000) | 0b01000000, configReg2); // dummy cycle = 6 = 2 + 4
         RDCR(&configReg1, &configReg2);
     }
     if ((configReg2 & 0b00000010) == 0) {
@@ -512,18 +525,19 @@ int main(void)
         HAL_Delay(30);
         RDCR(&configReg1, &configReg2);
     }
-    if (configReg1 & 0b01000000) {
-        Q_WRITE_DUMMY_CYCLES = 4;
-    } else {
+    if ((configReg1 & 0b01000000) != 0) {
         Q_WRITE_DUMMY_CYCLES = 8;
+    } else {
+        Q_WRITE_DUMMY_CYCLES = 4;
     }
 
     printf("status reg is now:%x\n", statusReg);
-    printf("config reg1 %x, reg2 %x", configReg1, configReg2);
 
     quad_enable();
     statusReg = RDSR();
     printf("status reg quad enable is now:%x\n", statusReg);
+    RDCR(&configReg1, &configReg2);
+    printf("config reg1 %x, reg2 %x", configReg1, configReg2);
     int writeTest = 0;
     if (writeTest == 1) {
         WREN();
@@ -546,7 +560,7 @@ int main(void)
         printf("write disable\n");
     }
 
-    uint8_t outData[125] = {0};
+    uint8_t outData[255] = {0};
     FREAD(0x123456, outData, sizeof(outData) - 1);
     printf("read data:%s\n", outData);
 
@@ -554,11 +568,11 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
-        memset(outData, 0, sizeof(outData));
-        FREAD(0x123456, outData, sizeof(outData) - 1);
-        printf("output data\n");
-        printf("read data:%s\n", outData);
-        HAL_Delay(1000);
+        // memset(outData, 0, sizeof(outData));
+        // FREAD(0x123456, outData, sizeof(outData) - 1);
+        // printf("output data\n");
+        // printf("read data:%s\n", outData);
+        // HAL_Delay(1000);
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
@@ -638,7 +652,7 @@ static void MX_QUADSPI_Init(void)
     hqspi.Init.FifoThreshold = 1;                               // FIFO when 8 more bytes written or read
     hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE; // don't sample the data read from memory half-clock cycle later
     hqspi.Init.FlashSize = 25;                                  // flash size = 2**(25+1) = 2**26 = 67108864 = 64 Mbytes
-    hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;  // the read and wirte command should CS# high in 30ns
+    hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;  // the read and wirte command should CS# high in 30ns
     hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;                   // clock stay low bwteen two command
     if (HAL_QSPI_Init(&hqspi) != HAL_OK)
     {

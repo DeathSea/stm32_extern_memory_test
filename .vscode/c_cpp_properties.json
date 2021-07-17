@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "D:\\tools\\gcc-arm-none-eabi-9-2020-q2-update-win32\\arm-none-eabi\\include"
+                "C:\\tools\\gcc-arm-none-eabi-9-2020-q2-update-win32\\arm-none-eabi\\include"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
@@ -15,7 +15,7 @@
                 "LINUX"
             ],
             "windowsSdkVersion": "10.0.17763.0",
-            "compilerPath": "d:\\tools\\gcc-arm-none-eabi-9-2020-q2-update-win32\\bin\\arm-none-eabi-gcc",
+            "compilerPath": "c:\\tools\\gcc-arm-none-eabi-9-2020-q2-update-win32\\bin\\arm-none-eabi-gcc",
             "cStandard": "c11",
             "cppStandard": "c++11",
             "intelliSenseMode": "gcc-arm",
