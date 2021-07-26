@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "test.h"
 #include "command_set.h"
 #include <stdio.h>
 #include <string.h>
@@ -188,6 +189,8 @@ void HpmDisable()
     }
 
     uint8_t reg = (readReg & 0b01111111) | 0b00000000;
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
     if (HAL_QSPI_Transmit(&hqspi, &reg, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
     {
         Error_Handler();
@@ -496,8 +499,6 @@ int main(void)
         WREN();
         set_polling_config_WEL(&autoPollingConfig);
         check_status_register(&autoPollingConfig);
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
 
         HpmDisable();
         statusReg = RDSR();
@@ -559,7 +560,7 @@ int main(void)
     } else {
         printf("write disable\n");
     }
-
+    char t = get_test_char(0);
     uint8_t outData[255] = {0};
     FREAD(0x123456, outData, sizeof(outData) - 1);
     printf("read data:%s\n", outData);
@@ -648,7 +649,7 @@ static void MX_QUADSPI_Init(void)
     /* USER CODE END QUADSPI_Init 1 */
     /* QUADSPI parameter configuration*/
     hqspi.Instance = QUADSPI;
-    hqspi.Init.ClockPrescaler = 0;                              // ClockPrescaler = 0,QSPI clock = FAHB / 1 = 80MHz / 1 = 80MHz
+    hqspi.Init.ClockPrescaler = 1;                              // ClockPrescaler = 0,QSPI clock = FAHB / 1 = 80MHz / 1 = 80MHz
     hqspi.Init.FifoThreshold = 1;                               // FIFO when 8 more bytes written or read
     hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE; // don't sample the data read from memory half-clock cycle later
     hqspi.Init.FlashSize = 25;                                  // flash size = 2**(25+1) = 2**26 = 67108864 = 64 Mbytes
@@ -704,21 +705,11 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-
     /* GPIO Ports Clock Enable */
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOH_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
-
-    /*Configure GPIO pin : PA8 */
-    GPIO_InitStruct.Pin = GPIO_PIN_8;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 4 */

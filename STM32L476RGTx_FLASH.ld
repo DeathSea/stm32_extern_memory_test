@@ -64,7 +64,7 @@ MEMORY
 RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 96K
 RAM2 (xrw)      : ORIGIN = 0x10000000, LENGTH = 32K
 FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 1024K
-/*QSPI (xrw)      : ORIGIN = 0x90000000, LENGTH = 2048K*/
+QSPI (xrw)      : ORIGIN = 0x90000000, LENGTH = 2048K
 }
 
 /* Define output sections */
@@ -77,6 +77,18 @@ SECTIONS
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(8);
   } >FLASH
+
+  .qspi :
+  {
+    . = ALIGN(4);
+    _qspi_start = .;        /* create a global symbol at qspi start */
+    *(.qspi)         /* .qspi sections */
+    *(.qspi*)        /* .qspi* sections*/
+    *test.o
+    . = ALIGN(4);
+    _qspi_end = .;         /* define a global symbols at end of qspi */
+    
+  } >QSPI AT> FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -117,21 +129,7 @@ SECTIONS
     __exidx_end = .;
 	. = ALIGN(8);
   } >FLASH
-/*
-  _qspi_init_base = LOADADDR(.qspi);
-  _qspi_init_length = SIZEOF(.qspi);
-  
-  .qspi :
-  {
-    . = ALIGN(8);
-    _qspi_start = .;        /* create a global symbol at qspi start 
-    *(.qspi)         /* .qspi sections 
-    *(.qspi*)        /* .qspi* sections
-    . = ALIGN(8);
-    _qspi_end = .;         /* define a global symbols at end of qspi 
-    
-  } >QSPI AT> FLASH
-*/
+
   .preinit_array     :
   {
 	. = ALIGN(8);

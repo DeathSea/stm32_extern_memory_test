@@ -37,6 +37,7 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Core/Src/main.c \
+Core/Src/test.c \
 Core/Src/stm32l4xx_it.c \
 Core/Src/stm32l4xx_hal_msp.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_qspi.c \
@@ -150,7 +151,7 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin  $(BUILD_DIR)/$(TARGET)_qspi.hex $(BUILD_DIR)/$(TARGET)_qspi.bin
 
 
 #######################################
@@ -173,12 +174,19 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
-$(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
-	$(HEX) $< $@
+$(BUILD_DIR)/$(TARGET).hex: $(BUILD_DIR)/$(TARGET).elf | $(BUILD_DIR)
+	$(HEX) --remove-section .qspi $< $@
 	
-$(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
-	$(BIN) $< $@	
-	
+$(BUILD_DIR)/$(TARGET).bin: $(BUILD_DIR)/$(TARGET).elf | $(BUILD_DIR)
+	$(BIN) --remove-section .qspi $< $@	
+
+$(BUILD_DIR)/$(TARGET)_qspi.hex: $(BUILD_DIR)/$(TARGET).elf | $(BUILD_DIR)
+	$(HEX) --only-section .qspi  $< $@
+
+$(BUILD_DIR)/$(TARGET)_qspi.bin: $(BUILD_DIR)/$(TARGET).elf | $(BUILD_DIR)
+	$(BIN) --only-section .qspi  $< $@	
+
+
 $(BUILD_DIR):
 	mkdir $@		
 
